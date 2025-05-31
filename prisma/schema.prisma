@@ -1,0 +1,104 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+}
+ 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image    String?
+  credits  Int  @default(10)
+
+
+  accounts Account[]
+  sessions Session[]
+}
+
+//course contains many units
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  image       String
+  units       Unit[]
+
+}
+
+// unit contains many chapters
+
+model Unit {
+  id          String   @id @default(cuid())
+  name        String
+  courseId    String
+  chapters    Chapter[]
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId], name: "courseId")
+}
+// chapter contains many lessons
+
+model Chapter {
+  id          String   @id @default(cuid())
+  name        String
+  unitId      String
+  youtubeSearchQuery String
+  videoId     String?
+  summary     String? @db.VarChar(3000)
+  unit       Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  questions   Question[]
+
+  @@index([unitId], name: "unitId")
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  chapterId   String
+  question    String @db.VarChar(3000)
+  answer      String @db.VarChar(3000) // Correct answer for the question
+  options     String @db.VarChar(3000) // Array of options for the questio
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  @@index([chapterId], name: "chapterId")
+}
+
+model UserSubscription {
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  stripeCustomerId       String    @unique @map(name: "stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
+  stripePriceId          String?   @map(name: "stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
+}
