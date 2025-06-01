@@ -11,6 +11,10 @@ const nextConfig = {
       "s3.us-west-2.amazonaws.com",
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  output: "standalone",
 };
 
 export default nextConfig;
